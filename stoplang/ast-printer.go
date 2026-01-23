@@ -50,6 +50,7 @@ func (p *AstPrinter) parenthesize(name string, exprs ...Expr) string {
 	return builder.String()
 }
 
+// TODO: remove after tests
 func (p *AstPrinter) main(args []string) {
 	expr := &Binary{
 		&Unary{
