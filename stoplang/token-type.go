@@ -1,4 +1,4 @@
-package thelang
+package stoplang
 
 type TokenType int
 

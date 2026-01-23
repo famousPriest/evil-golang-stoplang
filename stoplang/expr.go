@@ -1,4 +1,4 @@
-package thelang
+package stoplang
 
 // TODO: i can just use type switch, its not java anyway
 type Visitor interface {

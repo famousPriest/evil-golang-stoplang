@@ -1,3 +1,3 @@
-module the-lang
+module stoplang
 
 go 1.25.3

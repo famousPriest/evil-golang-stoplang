@@ -1,4 +1,4 @@
-package thelang
+package stoplang
 
 import "strconv"
 
