@@ -1,6 +1,8 @@
 package stoplang
 
-import "strconv"
+import (
+	"strconv"
+)
 
 type Scanner struct {
 	lang     *Lang
@@ -45,14 +47,20 @@ func (s *Scanner) isAtEnd() bool {
 	return s.current >= len(s.source)
 }
 
-// TODO: somehow implement add method for tokens
-func (s *Scanner) ScanTokens() {
+func (s *Scanner) ScanTokens() []Token {
 	for !s.isAtEnd() {
 		s.start = s.current
 		s.scanToken()
 	}
 
-	s.tokens.add()
+	s.tokens = append(s.tokens, Token{
+		tokenType: EOF,
+		lexeme:    "",
+		literal:   nil,
+		line:      s.line,
+	})
+
+	return s.tokens
 }
 
 func (s *Scanner) scanToken() {
@@ -247,5 +255,5 @@ func (s *Scanner) identifier() {
 		tokenType = IDENTIFIER
 	}
 
-	s.addToken(IDENTIFIER)
+	s.addToken(tokenType)
 }

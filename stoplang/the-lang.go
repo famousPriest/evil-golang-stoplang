@@ -66,9 +66,20 @@ func (l *Lang) run(source string) {
 
 	tokens := lex.ScanTokens()
 
-	for _, token := range tokens {
-		fmt.Println(token)
+	parser := &Parser{
+		tokens: tokens,
 	}
+	expr := parser.Parse()
+
+	if l.hadErrors {
+		return
+	}
+
+	printer := &AstPrinter{}
+
+	message := printer.Print(expr)
+
+	fmt.Print(message)
 }
 
 func (l *Lang) Error(line int, message string) {
@@ -76,6 +87,14 @@ func (l *Lang) Error(line int, message string) {
 }
 
 func (l *Lang) report(line int, where string, message string) {
-	fmt.Fprint(os.Stdin, "[line %d] errors%s: %s\n", line, where, message)
+	fmt.Fprintf(os.Stderr, "[line %d] Error%s: %s\n", line, where, message)
 	l.hadErrors = true
+}
+
+func (l *Lang) ErrorForParser(token Token, message string) {
+	if token.tokenType == EOF {
+		l.report(token.line, " at the end", message)
+	} else {
+		l.report(token.line, " at '"+token.lexeme+"'", message)
+	}
 }
