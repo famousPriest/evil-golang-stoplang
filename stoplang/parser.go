@@ -2,6 +2,7 @@ package stoplang
 
 import (
 	"fmt"
+	"slices"
 )
 
 type Parser struct {
@@ -206,11 +207,9 @@ func (p *Parser) synchronize() {
 }
 
 func (p *Parser) match(types ...TokenType) bool {
-	for _, tokenType := range types {
-		if p.check(tokenType) {
-			p.advance()
-			return true
-		}
+	if slices.ContainsFunc(types, p.check) {
+		p.advance()
+		return true
 	}
 	return false
 }
