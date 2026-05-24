@@ -1,15 +1,7 @@
 package stoplang
 
-// TODO: i can just use type switch, its not java anyway
-type Visitor interface {
-	VisitBinaryExpr(expr *Binary) (any, error)
-	VisitUnaryExpr(expr *Unary) (any, error)
-	VisitGroupingExpr(expr *Grouping) (any, error)
-	VisitLiteralExpr(expr *Literal) (any, error)
-}
-
 type Expr interface {
-	Accept(visitor Visitor) (any, error)
+	isExpr()
 }
 
 // -----------------------------------------------------
@@ -20,9 +12,7 @@ type Binary struct {
 	Right    Expr
 }
 
-func (b *Binary) Accept(v Visitor) (any, error) {
-	return v.VisitBinaryExpr(b)
-}
+func (b *Binary) isExpr() {}
 
 // -----------------------------------------------------
 
@@ -31,9 +21,7 @@ type Unary struct {
 	Right    Expr
 }
 
-func (u *Unary) Accept(v Visitor) (any, error) {
-	return v.VisitUnaryExpr(u)
-}
+func (u *Unary) isExpr() {}
 
 // -----------------------------------------------------
 
@@ -41,9 +29,7 @@ type Grouping struct {
 	Expression Expr
 }
 
-func (u *Grouping) Accept(v Visitor) (any, error) {
-	return v.VisitGroupingExpr(u)
-}
+func (g *Grouping) isExpr() {}
 
 // -----------------------------------------------------
 
@@ -51,6 +37,4 @@ type Literal struct {
 	Value any
 }
 
-func (u *Literal) Accept(v Visitor) (any, error) {
-	return v.VisitLiteralExpr(u)
-}
+func (l *Literal) isExpr() {}
