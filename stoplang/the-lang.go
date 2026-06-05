@@ -7,7 +7,6 @@ import (
 	"os"
 )
 
-// TODO: might want to add scanner here and deal with state pollution
 type Lang struct {
 	hadErrors       bool
 	hadRuntimeError bool
@@ -31,6 +30,7 @@ func (l *Lang) runFile(path string) {
 		fmt.Println(err)
 		return
 	}
+	defer file.Close()
 
 	bytes, err := io.ReadAll(file)
 	if err != nil {
@@ -63,31 +63,26 @@ func (l *Lang) runPromt() {
 
 		l.run(line)
 		l.hadErrors = false
+		l.hadRuntimeError = false
 	}
 }
 
-// TODO: wont work until add method for tokens isnt implemented
 func (l *Lang) run(source string) {
 	lex := NewScanner(source)
-
 	tokens := lex.ScanTokens()
 
 	parser := &Parser{
 		tokens: tokens,
+		lang:   l,
 	}
-	expr := parser.Parse()
+
+	statements := parser.Parse()
 
 	if l.hadErrors {
 		return
 	}
 
-	l.interpreter.Interpret(expr, l)
-
-	printer := &AstPrinter{}
-
-	message := printer.Print(expr)
-
-	fmt.Print(message)
+	l.interpreter.Interpret(statements, l)
 }
 
 func (l *Lang) Error(line int, message string) {

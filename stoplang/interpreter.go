@@ -6,21 +6,34 @@ import (
 	"strings"
 )
 
-type Interpreter struct{}
+type Interpreter struct {
+	environment *Environment
+}
 
-func (i *Interpreter) Interpret(expression Expr, lang *Lang) {
-	value, err := i.Evaluate(expression)
-	if err != nil {
-		if runtimeErr, ok := err.(*RuntimeError); ok {
-			fmt.Fprintf(os.Stderr, "%s\n[line %d]\n", runtimeErr.Message, runtimeErr.Token.line)
-			lang.hadRuntimeError = true
-		} else {
-			fmt.Fprintf(os.Stderr, "Unknown error: %v\n", err)
-		}
-		return
+func NewInterpreter() *Interpreter {
+	return &Interpreter{
+		environment: NewEnvironment(),
 	}
+}
 
-	fmt.Println(i.stringify(value))
+func (i *Interpreter) Interpret(statements []Stmt, lang *Lang) {
+	for _, statement := range statements {
+		err := i.execute(statement, lang)
+		if err != nil {
+			if runtimeErr, ok := err.(*RuntimeError); ok {
+				fmt.Fprintf(os.Stderr, "%s\n[line %d]\n", runtimeErr.Message, runtimeErr.Token.line)
+				lang.hadRuntimeError = true
+			} else {
+				fmt.Fprintf(os.Stderr, "Unknown error: %v\n", err)
+			}
+			return
+		}
+	}
+}
+
+func (i *Interpreter) execute(stmt Stmt, lang *Lang) error {
+	_, err := stmt.Accept(i)
+	return err
 }
 
 func (i *Interpreter) Evaluate(expr Expr) (any, error) {
@@ -40,7 +53,10 @@ func (i *Interpreter) Evaluate(expr Expr) (any, error) {
 		case MINUS:
 			value, ok := right.(float64)
 			if !ok {
-				return nil, fmt.Errorf("operand must be a number")
+				return nil, &RuntimeError{
+					Token:   e.Operator,
+					Message: "Operand must be a number.",
+				}
 			}
 			return -value, nil
 
@@ -123,7 +139,7 @@ func (i *Interpreter) Evaluate(expr Expr) (any, error) {
 			}
 			return nil, &RuntimeError{
 				Token:   e.Operator,
-				Message: fmt.Sprintf("line %d: operands must be two numbers or two strings for operator '+'", e.Operator.line),
+				Message: "Operands must be two numbers or two strings.",
 			}
 
 		case BANG_EQUAL:
@@ -135,9 +151,81 @@ func (i *Interpreter) Evaluate(expr Expr) (any, error) {
 
 		return nil, fmt.Errorf("unknown binary operator: %v", e.Operator)
 
+	case *Assign:
+		value, err := i.Evaluate(e.Value)
+		if err != nil {
+			return nil, err
+		}
+
+		err = i.environment.Assign(e.Name, value)
+		if err != nil {
+			return nil, err
+		}
+
+		return value, nil
+
 	default:
 		return nil, fmt.Errorf("unknown expression type: %T", expr)
 	}
+}
+
+func (i *Interpreter) VisitExpressionStmt(stmt *ExpressionStmt) (any, error) {
+	_, err := i.Evaluate(stmt.Expression)
+	if err != nil {
+		return nil, err
+	}
+	return nil, nil
+}
+
+func (i *Interpreter) VisitPrintStmt(stmt *PrintStmt) (any, error) {
+	value, err := i.Evaluate(stmt.Expression)
+	if err != nil {
+		return nil, err
+	}
+
+	fmt.Println(i.stringify(value))
+	return nil, nil
+}
+
+func (i *Interpreter) VisitVarStmt(stmt *VarStmt) (any, error) {
+	var value any
+	var err error
+
+	if stmt.Initializer != nil {
+		value, err = i.Evaluate(stmt.Initializer)
+		if err != nil {
+			return nil, err
+		}
+	}
+
+	i.environment.Define(stmt.Name.lexeme, value)
+
+	return nil, nil
+}
+
+func (i *Interpreter) VisitBlockStmt(stmt *BlockStmt) (any, error) {
+	scopedEnv := NewEnclosingEnvironment(i.environment)
+
+	return nil, i.executeBlock(stmt.Statements, scopedEnv)
+}
+
+func (i *Interpreter) executeBlock(statements []Stmt, env *Environment) error {
+	previousEnv := i.environment
+
+	defer func() {
+		i.environment = previousEnv
+	}()
+
+	i.environment = env
+
+	for _, statement := range statements {
+		err := i.execute(statement, nil)
+		if err != nil {
+			return err
+		}
+	}
+
+	return nil
 }
 
 func (i *Interpreter) isTruthy(obj any) bool {

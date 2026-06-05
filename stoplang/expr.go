@@ -38,3 +38,20 @@ type Literal struct {
 }
 
 func (l *Literal) isExpr() {}
+
+// -----------------------------------------------------
+
+type Variable struct {
+	Name Token
+}
+
+func (v *Variable) isExpr() {}
+
+// -----------------------------------------------------
+
+type Assign struct {
+	Name  Token
+	Value Expr
+}
+
+func (a *Assign) isExpr() {}
