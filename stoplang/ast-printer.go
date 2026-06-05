@@ -9,7 +9,6 @@ type AstPrinter struct{}
 
 func (p *AstPrinter) Print(expr Expr) string {
 	result, _ := expr.Accept(p)
-
 	return result.(string)
 }
 
@@ -25,7 +24,6 @@ func (p *AstPrinter) VisitLiteralExpr(expr *Literal) (any, error) {
 	if expr.Value == nil {
 		return "nil", nil
 	}
-
 	return fmt.Sprintf("%v", expr.Value), nil
 }
 
@@ -51,17 +49,19 @@ func (p *AstPrinter) parenthesize(name string, exprs ...Expr) string {
 }
 
 // TODO: remove after tests
-func (p *AstPrinter) main(args []string) {
+func (p *AstPrinter) RunTest() {
 	expr := &Binary{
-		&Unary{
-			Token{tokenType: MINUS, lexeme: "-", literal: nil, line: 1},
-			&Literal{Value: 1},
+		Left: &Unary{
+			Operator: Token{tokenType: MINUS, lexeme: "-", literal: nil, line: 1},
+			Right:    &Literal{Value: 1},
 		},
-		Token{tokenType: STAR, lexeme: "*", literal: nil, line: 1},
-		&Grouping{
-			&Literal{Value: 69.67},
+		Operator: Token{tokenType: STAR, lexeme: "*", literal: nil, line: 1},
+		Right: &Grouping{
+			Expression: &Literal{Value: 69.67},
 		},
 	}
 
-	fmt.Println(expr)
+	// Correctly call the printer
+	fmt.Println(p.Print(expr))
+	// Output: (* (- 1) (group 69.67))
 }

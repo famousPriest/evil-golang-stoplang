@@ -9,7 +9,9 @@ import (
 
 // TODO: might want to add scanner here and deal with state pollution
 type Lang struct {
-	hadErrors bool
+	hadErrors       bool
+	hadRuntimeError bool
+	interpreter     Interpreter
 }
 
 func (l *Lang) main(args []string) {
@@ -40,6 +42,10 @@ func (l *Lang) runFile(path string) {
 
 	if l.hadErrors {
 		os.Exit(65)
+	}
+
+	if l.hadRuntimeError {
+		os.Exit(70)
 	}
 }
 
@@ -74,6 +80,8 @@ func (l *Lang) run(source string) {
 	if l.hadErrors {
 		return
 	}
+
+	l.interpreter.Interpret(expr, l)
 
 	printer := &AstPrinter{}
 
