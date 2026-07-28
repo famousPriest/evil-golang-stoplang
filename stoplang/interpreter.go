@@ -177,6 +177,57 @@ func (i *Interpreter) VisitExpressionStmt(stmt *ExpressionStmt) (any, error) {
 	return nil, nil
 }
 
+func (i *Interpreter) VisitWhileStmt(stmt *WhileStmt) (any, error) {
+	for {
+		condition, err := i.Evaluate(stmt.Condition)
+		if err != nil {
+			return nil, err
+		}
+		if !i.isTruthy(condition) {
+			break
+		}
+		return i.execute(stmt.Body, nil), err
+	}
+	return nil, nil
+}
+
+func (i *Interpreter) VisitIfStmt(stmt *IfStmt) (any, error) {
+	condition, err := i.Evaluate(stmt.Condition)
+	if err != nil {
+		return nil, err
+	}
+	if i.isTruthy(condition) {
+		return i.execute(stmt.ThenBranch, nil), err
+	}
+	if stmt.ElseBranch != nil {
+		return i.execute(stmt.ElseBranch, nil), err
+	}
+	return nil, nil
+}
+
+func (i *Interpreter) VisitLogicalExpr(expr *Logical) (any, error) {
+	left, err := i.Evaluate(expr.Left)
+	if err != nil {
+		return nil, err
+	}
+
+	if expr.Operator.tokenType == OR {
+		if i.isTruthy(left) {
+			return left, nil
+		}
+	} else {
+		if !i.isTruthy(left) {
+			return left, nil
+		}
+	}
+
+	right, err := i.Evaluate(expr.Right)
+	if err != nil {
+		return nil, err
+	}
+	return right, nil
+}
+
 func (i *Interpreter) VisitPrintStmt(stmt *PrintStmt) (any, error) {
 	value, err := i.Evaluate(stmt.Expression)
 	if err != nil {

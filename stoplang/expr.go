@@ -55,3 +55,13 @@ type Assign struct {
 }
 
 func (a *Assign) isExpr() {}
+
+// -----------------------------------------------------
+
+type Logical struct {
+	Left     Expr
+	Operator Token
+	Right    Expr
+}
+
+func (l *Logical) isExpr() {}
